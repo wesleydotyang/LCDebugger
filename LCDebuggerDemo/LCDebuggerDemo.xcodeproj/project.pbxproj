@@ -99,6 +99,7 @@
 		BFBFBD241AAF0BB400854A11 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = BFBFBD221AAF0BB400854A11 /* LaunchScreen.xib */; };
 		BFBFBD301AAF0BB400854A11 /* LCDebuggerDemoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BFBFBD2F1AAF0BB400854A11 /* LCDebuggerDemoTests.m */; };
 		BFBFBD5A1AB027B700854A11 /* LCDebugger.m in Sources */ = {isa = PBXBuildFile; fileRef = BFBFBD591AB027B700854A11 /* LCDebugger.m */; };
+		C9463E5D1CBF36EC009B4AA1 /* LCFilePathView.m in Sources */ = {isa = PBXBuildFile; fileRef = C9463E5C1CBF36EC009B4AA1 /* LCFilePathView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -297,6 +298,8 @@
 		BFBFBD2F1AAF0BB400854A11 /* LCDebuggerDemoTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LCDebuggerDemoTests.m; sourceTree = "<group>"; };
 		BFBFBD581AB027B700854A11 /* LCDebugger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LCDebugger.h; sourceTree = "<group>"; };
 		BFBFBD591AB027B700854A11 /* LCDebugger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LCDebugger.m; sourceTree = "<group>"; };
+		C9463E5B1CBF36EC009B4AA1 /* LCFilePathView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LCFilePathView.h; sourceTree = "<group>"; };
+		C9463E5C1CBF36EC009B4AA1 /* LCFilePathView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LCFilePathView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -458,6 +461,8 @@
 		BF63CF991AB14256000343FF /* ViewsInspector */ = {
 			isa = PBXGroup;
 			children = (
+				C9463E5B1CBF36EC009B4AA1 /* LCFilePathView.h */,
+				C9463E5C1CBF36EC009B4AA1 /* LCFilePathView.m */,
 				BF63CF9A1AB14256000343FF /* LCViewInspector.h */,
 				BF63CF9B1AB14256000343FF /* LCViewInspector.m */,
 			);
@@ -860,6 +865,7 @@
 				BFA64A8D1AB2A926004139B6 /* UIView+LCUIViewFrame.m in Sources */,
 				BF7E3FD81AB6B22F00D03699 /* LCStorageInfoController.m in Sources */,
 				BF629DD41ABA82B700E6ED82 /* LCWebBackstageTableView.m in Sources */,
+				C9463E5D1CBF36EC009B4AA1 /* LCFilePathView.m in Sources */,
 				137F716D1AB3326E008207D3 /* LCRAMUsage.m in Sources */,
 				BF63CFB51AB144A9000343FF /* LCUtils.m in Sources */,
 				BFA64AB71AB2D3A3004139B6 /* LCUIKeyBoard.m in Sources */,

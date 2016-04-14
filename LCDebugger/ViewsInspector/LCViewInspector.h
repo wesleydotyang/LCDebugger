@@ -21,6 +21,7 @@
 
 @end
 
+
 @interface LCInspectorLayer : UIImageView
 
 @property (nonatomic, assign) CGFloat		depth;
@@ -28,4 +29,5 @@
 @property (nonatomic, strong) UIView  *	view;
 @property (nonatomic, strong) UILabel *	label;
 
+@property (nonatomic,assign) BOOL selected;
 @end

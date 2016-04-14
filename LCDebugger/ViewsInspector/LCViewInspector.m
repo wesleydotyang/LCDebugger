@@ -9,8 +9,9 @@
 //
 
 #import "LCViewInspector.h"
-#import "LCDebuggerView.h"
+#import "LCFilePathView.h"
 #import "UIWindow+LCUIWindowHook.h"
+#import "LCDebuggerView.h"
 
 #define D2R( __degree ) (M_PI / 180.0f * __degree)
 
@@ -127,11 +128,20 @@
 	self.label.frame = labelFrame;
 }
 
+-(void)setSelected:(BOOL)selected
+{
+    _selected = selected;
+
+    self.layer.borderWidth = _selected? 2 : 1;
+    self.layer.borderColor = _selected? [[UIColor redColor] colorWithAlphaComponent:0.5].CGColor : [[UIColor blueColor] colorWithAlphaComponent:0.5].CGColor;
+
+}
+
 @end
 
 #pragma mark -
 
-@interface LCViewInspector ()
+@interface LCViewInspector ()<LCFilePathViewDelegate>
 {
     float				_rotateX;
     float				_rotateY;
@@ -145,8 +155,15 @@
 	BOOL				_labelShown;
     
     UIView *            _inView;
+    
+    LCFilePathView *    _headerView;
+    LCFilePathViewNode* _headerRootData;
+    
+    UISlider *          _viewLevelSlider;
+    
 }
-
+@property (nonatomic,strong) UILabel *infoLabel;
+@property (nonatomic,assign) int viewingLevel;
 @end
 
 #pragma mark -
@@ -168,7 +185,7 @@
         
         UIPanGestureRecognizer * pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panHandle:)];
         [self addGestureRecognizer:pan];
-        
+
 
         UIPinchGestureRecognizer * pinch = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchHandle:)];
         [self addGestureRecognizer:pinch];
@@ -208,6 +225,24 @@
         [closeButton setTitle:@"Close" forState:UIControlStateNormal];
         [closeButton addTarget:self action:@selector(closeButton) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:closeButton];
+        
+        //view info
+        self.infoLabel.frame = CGRectMake(10,50 , 200, 200);
+        [self addSubview:self.infoLabel];
+        
+        //header
+        _headerView = [[LCFilePathView alloc] init];
+        _headerView.frame = CGRectMake(0, 20, self.frame.size.width, 30);
+        _headerView.delegate = self;
+        [self addSubview:_headerView];
+        
+        //slider
+        _viewLevelSlider = [[UISlider alloc] initWithFrame:CGRectMake(170, self.frame.size.height-50, self.frame.size.width-180, 50)];
+        _viewLevelSlider.minimumValue = 0;
+        _viewLevelSlider.maximumValue = MAX_DEPTH;
+        _viewLevelSlider.value = _viewLevelSlider.maximumValue;
+        [_viewLevelSlider addTarget:self action:@selector(sliderValueChanged:) forControlEvents:UIControlEventValueChanged];
+        [self addSubview:_viewLevelSlider];
     }
     
     return self;
@@ -254,8 +289,6 @@
     
 	if ( layer )
 	{
-		layer.layer.borderWidth = 1.5f;
-		layer.layer.borderColor = [[UIColor blueColor] colorWithAlphaComponent:0.5].CGColor;
 		layer.backgroundColor = [[UIColor lightGrayColor] colorWithAlphaComponent:0.5];
         
 		CGPoint anchor;
@@ -282,7 +315,15 @@
 		layer.image = view.screenshotOneLayer;
 		layer.layer.anchorPoint = anchor;
 		layer.layer.anchorPointZ = (layer.depth * -1.0f) * 75.0f;
+        
+        
+        layer.userInteractionEnabled = YES;
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(onTapLayer:)];
+        [layer addGestureRecognizer:tap];
+        
 		[self addSubview:layer];
+        
+        
 	}
     
 	for ( UIView * subview in view.subviews )
@@ -348,6 +389,30 @@
 	}
 }
 
+-(void)buildHeaderData
+{
+    UIView *startView = [UIApplication sharedApplication].keyWindow;
+    LCFilePathViewNode *node = [LCFilePathViewNode new];
+    node.name = NSStringFromClass([startView class]);
+    node.attachedData = startView;
+    _headerRootData = node;
+    [self buildHeaderDataForView:startView withData:node];
+    
+    _headerView.fileRootNode = _headerRootData;
+}
+
+-(void)buildHeaderDataForView:(UIView*)aView withData:(LCFilePathViewNode*)node
+{
+    for (UIView *subView in aView.subviews) {
+        LCFilePathViewNode *child = [LCFilePathViewNode new];
+        child.name = NSStringFromClass([subView class]);
+        child.parent = node;
+        child.attachedData = subView;
+        [node addChild:child];
+        [self buildHeaderDataForView:subView withData:child];
+    }
+}
+
 - (void)prepareShow:(UIView *)inView
 {
     _inView = inView;
@@ -355,6 +420,10 @@
     
 	[self removeLayers];
 	[self buildLayers];
+    [self bringSubviewToFront:_headerView];
+    [self bringSubviewToFront:_viewLevelSlider];
+    
+    [self buildHeaderData];
     
 	_rotateX = 0.0f;
 	_rotateY = 0.0f;
@@ -449,6 +518,68 @@
 	}
 }
 
+-(void)setViewingLevel:(int)viewingLevel
+{
+    _viewingLevel = viewingLevel;
+    
+    for ( LCInspectorLayer * layer in self.subviews )
+    {
+        if ( [layer isKindOfClass:[LCInspectorLayer class]] )
+        {
+            layer.hidden = layer.depth>viewingLevel;
+        }
+    }
+    _viewLevelSlider.value = viewingLevel;
+}
+
+-(void)selectLayer:(LCInspectorLayer*)slayer
+{
+    for ( LCInspectorLayer * layer in self.subviews )
+    {
+        if ( [layer isKindOfClass:[LCInspectorLayer class]] )
+        {
+            layer.selected = (slayer == layer);
+        }
+    }
+}
+
+-(void)onTapLayer:(UITapGestureRecognizer*)tap
+{
+    LCInspectorLayer *layer = (LCInspectorLayer*)tap.view;
+    self.infoLabel.text = [self debugInfoOfView:layer.view];
+    [self selectLayer:layer];
+
+    UIView *targetView = layer.view;
+    LCFilePathViewNode *rootNode = _headerView.fileRootNode;
+    UIView *rootView = rootNode.attachedData;
+    
+    NSMutableArray *viewList =  [NSMutableArray array];
+    UIView *cView = targetView;
+    while (cView && cView!=rootView) {
+        [viewList insertObject:cView atIndex:0];
+        cView = cView.superview;
+    }
+    
+    NSMutableArray *dataList = [NSMutableArray arrayWithObject:rootNode];
+    LCFilePathViewNode *currentNode = rootNode;
+    for (UIView *aView in viewList) {
+        for (LCFilePathViewNode *subNode in currentNode.children) {
+            if (subNode.attachedData == aView) {
+                [dataList addObject:subNode];
+                currentNode = subNode;
+                break;
+            }
+        }
+    }
+    
+    [_headerView setCurrentDisplayingPaths:dataList];
+}
+
+-(void)sliderValueChanged:(UISlider*)slider
+{
+    self.viewingLevel = slider.value;
+}
+
 -(void) closeButton
 {
     [UIView beginAnimations:@"CLOSE" context:nil];
@@ -465,9 +596,44 @@
 	[UIView commitAnimations];
 }
 
+
 -(void) didClose
 {
     [self hide];
+}
+
+-(NSString*)debugInfoOfView:(UIView*)view
+{
+    return [NSString stringWithFormat:@"%@\n%@",NSStringFromClass(view.class),NSStringFromCGRect(view.frame)];
+}
+
+-(UILabel *)infoLabel
+{
+    if (!_infoLabel) {
+        _infoLabel = [[UILabel alloc] init];
+        _infoLabel.numberOfLines = 0;
+        _infoLabel.textColor = [UIColor whiteColor];
+        _infoLabel.font = [UIFont systemFontOfSize:9];
+        _infoLabel.textAlignment = NSTextAlignmentLeft;
+    }
+    return _infoLabel;
+}
+
+-(void)filePathView:(LCFilePathView *)pathView didSelectItem:(LCFilePathViewNode *)data
+{
+    for ( LCInspectorLayer * layer in self.subviews )
+    {
+        if ( [layer isKindOfClass:[LCInspectorLayer class]] )
+        {
+            if (layer.view == data.attachedData) {
+                [self setViewingLevel:layer.depth];
+                [self selectLayer:layer];
+                break;
+            }
+            
+        }
+    }
+
 }
 
 @end
